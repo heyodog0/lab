@@ -35,6 +35,12 @@ the equivalent raw commands are `bazel run -c opt //:game --define=graphics=sdl 
 (agent). Play controls: **W/A/S/D** move, **mouse** look, **Space** jump,
 **Ctrl** crouch, **Mouse1 / C** fire, **Esc** menu, close window to quit.
 
+The windowed game (`--define=graphics=sdl`) is a different build configuration
+than the headless agent, so alternating between them with raw `bazel` prints
+`Build option --define has changed, discarding analysis cache` and re-analyzes.
+The `just` recipes avoid this by building the SDL game in its own Bazel output
+base (`/var/tmp/dmlab-bazel-sdl`), so the two caches never disturb each other.
+
 ## What was changed to make it work on Apple Silicon
 
 All changes are confined to the build/config and a few engine files; the game
