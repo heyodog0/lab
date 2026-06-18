@@ -38,9 +38,9 @@ cc_library(
 
 _GET_PYTHON_INCLUDE_DIR = """
 import sys
-from distutils.sysconfig import get_python_inc
+import sysconfig
 from numpy import get_include
-sys.stdout.write("{}\\n{}\\n".format(get_python_inc(), get_include()))
+sys.stdout.write("{}\\n{}\\n".format(sysconfig.get_path("include"), get_include()))
 """.strip()
 
 def _python_repo_impl(repository_ctx):

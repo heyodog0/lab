@@ -18,7 +18,7 @@ config_setting(
 
 CODE_DIR = "engine/code"
 
-ARCH_VAR = "-DARCH_STRING=\\\"x86_64\\\""
+ARCH_VAR = "-DARCH_STRING=\\\"arm64\\\""
 
 STANDALONE_VAR = "-DSTANDALONE"
 
@@ -627,8 +627,15 @@ IOQ3_COMMON_SRCS = [
         CODE_DIR + "/qcommon/vm_powerpc_asm.h",
         CODE_DIR + "/qcommon/vm_sparc.c",
         CODE_DIR + "/qcommon/vm_sparc.h",
+        # vm_x86.c is the x86/x86-64 JIT; pick the VM backend per-arch below.
+        CODE_DIR + "/qcommon/vm_x86.c",
     ],
-) + IOQ3_RENDERERGL1_SRCS
+) + IOQ3_RENDERERGL1_SRCS + select({
+    # arm64 has no bytecode JIT: use the no-op compiler stub (vm_none.c) and
+    # run QVM bytecode through the interpreter (see NO_VM_COMPILED below).
+    ":is_macos": [CODE_DIR + "/qcommon/vm_none.c"],
+    "//conditions:default": [CODE_DIR + "/qcommon/vm_x86.c"],
+})
 
 IOQ3_COMMON_DEPS = [
     ":file_reader_types",
@@ -649,7 +656,11 @@ IOQ3_COMMON_COPTS = [
     "-fno-strict-aliasing",
     ARCH_VAR,
     STANDALONE_VAR,
-]
+] + select({
+    # arm64 macOS has no bytecode JIT; force the QVM interpreter path.
+    ":is_macos": ["-DNO_VM_COMPILED"],
+    "//conditions:default": [],
+})
 
 IOQ3_COMMON_DEFINES = [
     "BOTLIB",
@@ -1061,6 +1072,13 @@ cc_binary(
         "-std=c99",
         "-DDEEPMIND_LAB_MODULE_RUNFILES_DIR",
     ],
+    # Python extension modules leave the CPython API symbols undefined; they are
+    # resolved at runtime by the interpreter. Linux allows this implicitly, but
+    # the macOS linker needs -undefined dynamic_lookup.
+    linkopts = select({
+        ":is_macos": ["-undefined", "dynamic_lookup"],
+        "//conditions:default": [],
+    }),
     linkshared = 1,
     linkstatic = 1,
     visibility = [

@@ -1477,7 +1477,14 @@ int dmlab_connect(const DeepMindLabLaunchParams* params, EnvCApi* env_c_api,
   gc->recording_ctx = rcxt;
   gc->map_frame_number_shape[0] = 1;
   gc->map_frame_number_observation = 0;
+#ifdef __APPLE__
+  // Apple's legacy OpenGL-on-Metal context does not support pixel-buffer-object
+  // readback reliably; use the direct glReadPixels path instead. Can still be
+  // overridden via the "use_pbos" setting.
+  gc->pbos.enabled = false;
+#else
   gc->pbos.enabled = true;
+#endif
 
   memset(env_c_api, 0, sizeof(EnvCApi));
 

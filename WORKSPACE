@@ -5,8 +5,8 @@ load("@//:python_system.bzl", "python_repo")
 
 http_archive(
     name = "com_google_googletest",
-    strip_prefix = "googletest-master",
-    urls = ["https://github.com/google/googletest/archive/master.zip"],
+    strip_prefix = "googletest-release-1.11.0",
+    urls = ["https://github.com/google/googletest/archive/refs/tags/release-1.11.0.tar.gz"],
 )
 
 http_archive(
@@ -17,8 +17,8 @@ http_archive(
 
 http_archive(
     name = "com_google_absl",
-    strip_prefix = "abseil-cpp-master",
-    urls = ["https://github.com/abseil/abseil-cpp/archive/master.zip"],
+    strip_prefix = "abseil-cpp-20220623.1",
+    urls = ["https://github.com/abseil/abseil-cpp/archive/refs/tags/20220623.1.tar.gz"],
 )
 
 http_archive(
@@ -49,11 +49,9 @@ http_archive(
 http_archive(
     name = "eigen_archive",
     build_file = "@//bazel:eigen.BUILD",
-    sha256 = "9a01fed6311df359f3f9af119fcf298a3353aef7d1b1bc86f6c8ae0ca6a2f842",
-    strip_prefix = "/eigen-eigen-5d5dd50b2eb6",
+    strip_prefix = "eigen-3.4.0",
     urls = [
-        "https://mirror.bazel.build/bitbucket.org/eigen/eigen/get/5d5dd50b2eb6.zip",
-        "https://bitbucket.org/eigen/eigen/get/5d5dd50b2eb6.zip",
+        "https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz",
     ],
 )
 
@@ -71,9 +69,12 @@ http_archive(
 http_archive(
     name = "jpeg_archive",
     build_file = "@//bazel:jpeg.BUILD",
-    sha256 = "1e9793e1c6ba66e7e0b6e5fe7fd0f9e935cc697854d5737adec54d93e5b3f730",
+    sha256 = "682aee469c3ca857c4c38c37a6edadbfca4b04d42e56613b11590ec6aa4a278d",
     strip_prefix = "jpeg-9c",
-    urls = ["http://www.ijg.org/files/jpegsrc.v9c.tar.gz"],
+    urls = [
+        "https://mirror.bazel.build/www.ijg.org/files/jpegsrc.v9c.tar.gz",
+        "http://www.ijg.org/files/jpegsrc.v9c.tar.gz",
+    ],
 )
 
 http_archive(
@@ -156,13 +157,13 @@ http_archive(
 new_local_repository(
     name = "glib_local_archive",
     build_file = "@//bazel:glib.BUILD",
-    path ="/usr/local/Cellar/glib/2.68.3",
+    path = "/opt/homebrew/opt/glib",
 )
 
 new_local_repository(
     name = "sdl_system",
     build_file = "@//bazel:sdl.BUILD",
-    path = "/usr",
+    path = "/opt/homebrew",
 )
 
 python_repo(

@@ -22,6 +22,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "qasm-inline.h"
 
+// These routines are x86 inline assembly only. On other architectures
+// (e.g. arm64) the engine uses the C fallbacks in q_shared.h instead.
+#if id386 || idx64
+
 static const unsigned short fpucw = 0x0C7F;
 
 /*
@@ -94,6 +98,8 @@ int qvmftolx87(void)
     : "=r" (retval)
     : "m" (oldcw), "m" (fpucw)
   );
-  
+
   return retval;
 }
+
+#endif  // id386 || idx64

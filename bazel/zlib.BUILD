@@ -32,6 +32,13 @@ cc_library(
         "zutil.h",
     ],
     hdrs = ["zlib.h"],
-    copts = ["-Wno-implicit-function-declaration"],
+    # On modern macOS, TARGET_OS_MAC is always defined, which makes zutil.h
+    # macro-define fdopen to NULL and clash with the system <stdio.h>
+    # declaration. Predefining the macro to itself keeps the real fdopen and
+    # skips zlib's "No fdopen()" fallback.
+    copts = [
+        "-Wno-implicit-function-declaration",
+        "-Dfdopen=fdopen",
+    ],
     includes = ["."],
 )

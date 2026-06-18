@@ -51,6 +51,15 @@ cc_library(
         "pngconf.h",
     ],
     includes = ["."],
+    # On modern macOS, TARGET_OS_MAC is always defined, so pngpriv.h tries to
+    # include the Classic-Mac-only <fp.h>. Force-include <math.h> for the math
+    # functions, and define __cmath__ (one of the guards png checks, but NOT the
+    # system <math.h> include guard) so the <fp.h> branch is skipped.
+    copts = [
+        "-include",
+        "math.h",
+        "-D__cmath__",
+    ],
     linkopts = ["-lm"],
     visibility = ["//visibility:public"],
     deps = ["@zlib_archive//:zlib"],

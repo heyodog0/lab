@@ -8,16 +8,16 @@ cc_library(
     name = "sdl2",
     srcs = select({
         "@//:is_linux": [],
-        "@//:is_macos": ["local/Cellar/sdl2/2.0.14_1/lib/libSDL2-2.0.0.dylib"],
+        "@//:is_macos": ["opt/sdl2/lib/libSDL2-2.0.0.dylib"],
     }),
     hdrs = select({
         "@//:is_linux": glob(["include/SDL2/*.h"]),
-        "@//:is_macos": glob(["local/Cellar/sdl2/2.0.14_1/include/SDL2/*.h"]),
+        "@//:is_macos": glob(["opt/sdl2/include/SDL2/*.h"]),
     }),
     defines = ["_REENTRANT"],
     includes = select({
         "@//:is_linux": ["include/SDL2"],
-        "@//:is_macos": ["local/Cellar/sdl2/2.0.14_1/include/SDL2"],
+        "@//:is_macos": ["opt/sdl2/include/SDL2"],
     }),
     linkopts = select({
         "@//:is_linux": ["-lSDL2"],

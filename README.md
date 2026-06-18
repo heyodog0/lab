@@ -1,28 +1,64 @@
-# Experimental MacOSX port
+# DeepMind Lab on Apple Silicon (macOS, arm64)
 
-This is _not_ the main _DeepMind Lab_ branch.
+This branch makes _DeepMind Lab_ **build and run natively on Apple Silicon Macs**
+(M1–M4, macOS), both headless (for RL agents) and headful (to play yourself).
+Rendering is GPU-accelerated through Apple's OpenGL-on-Metal layer — at startup
+you'll see e.g. `Renderer: Apple M4 Pro` / `Version: 2.1 Metal`.
 
-This is an experimental, non-functional development branch that contains
-incompatible changes to make _DeepMind Lab_ work on MacOSX.
+It builds on the older, unfinished `origin/macos` port (which added the Cocoa/CGL
+headless renderer) and brings it up to Apple Silicon and a modern toolchain.
 
-**Notable changes:**
+> **Scope / caveats.** This targets local experimentation and human play on a Mac.
+> macOS OpenGL is deprecated (frozen at 4.1) and this uses the legacy GL profile,
+> so for serious RL training a Linux + NVIDIA box (the EGL hardware path) is still
+> the supported, faster choice.
 
-* `glib` is no longer compiled from source, but must instead be
-  provided locally.
-* The use of `sendfile` in `public/dmlab_so_loader.cc` has been replaced with
-  `fcopyfile`.
+## Quick start
 
-You need to pass `--apple_platform_type=macos` to all Bazel invocations.
+```sh
+# One-time: install the toolchain
+brew install bazelisk just      # plus: glib sdl2 numpy (and a Python 3 with numpy)
 
-You may want to use homebrew to install the following packages:
-`glib`, `sdl2`, `python@2`, `numpy`. We also consume a dependency `-liconv`,
-but that just seems to work.
+# Then, from this directory:
+just              # list all commands
+just play         # play a maze yourself in a window (W/A/S/D + mouse)
+just play lt_chasm        # play a specific level
+just agent        # run a random RL agent headless
+just agent nav_maze_static_01 5000   # level + number of steps
+just levels       # list playable levels
+just build        # build the headless Python module (deepmind_lab.so)
+```
 
-The headful SDL renderer works (e.g. `//:game`, or `//:python_random_agent`
-with `--define=graphics=sdl`). The headless renderers for OSMesa, GLX and EGL
-do not work yet, apparently because we are missing the relevant library
-dependencies. A native MacOSX "glimp" implementation seems like the best next
-step (but is not complete yet).
+The Bazel version is pinned in `.bazelversion`, so plain `bazel ...` works too;
+the equivalent raw commands are `bazel run -c opt //:game --define=graphics=sdl --
+--level_script=<level>` (play) and `bazel run -c opt //:python_random_agent`
+(agent). Play controls: **W/A/S/D** move, **mouse** look, **Space** jump,
+**Ctrl** crouch, **Mouse1 / C** fire, **Esc** menu, close window to quit.
+
+## What was changed to make it work on Apple Silicon
+
+All changes are confined to the build/config and a few engine files; the game
+logic is untouched. Summary:
+
+| Area | Change | Files |
+| --- | --- | --- |
+| **Architecture** | Add an `arm64` arch string (`__arm64__`/`__aarch64__`); do **not** set `idx64` (that means x86-64), so x86 code paths stay off | `engine/code/qcommon/q_platform.h`, `BUILD` (`ARCH_VAR`) |
+| **x86 assembly** | The build compiled x86 SSE asm and the x86 JIT unconditionally. On arm64, guard the asm bodies out, exclude `vm_x86.c`, use the no-JIT stub `vm_none.c`, and define `-DNO_VM_COMPILED` so QVM bytecode runs through the interpreter | `engine/code/asm/ftola.c`, `engine/code/asm/snapvector.c`, `BUILD` |
+| **Python extension** | Link the module with `-undefined dynamic_lookup` on macOS (CPython symbols resolve at runtime) | `BUILD` |
+| **Pixel readback** | Apple's legacy GL-on-Metal context can't do PBO readback reliably; default PBOs off on `__APPLE__` and use the direct `glReadPixels` path (override with the `use_pbos` setting) | `engine/code/deepmind/dmlab_connect.c` |
+| **Homebrew paths** | Point the local `glib`/`sdl2` repositories at `/opt/homebrew` (Apple Silicon) instead of Intel `/usr/local` | `WORKSPACE`, `bazel/sdl.BUILD` |
+| **Dependency pins** | Pin abseil `20220623.1` and googletest `1.11.0` (HEAD now needs newer `rules_cc`); bump Eigen to `3.4.0`; fix the `jpeg` checksum | `WORKSPACE` |
+| **Modern-toolchain fixes** | zlib: `-Dfdopen=fdopen`; libpng: `-include math.h -D__cmath__` — both dodge the `TARGET_OS_MAC`/`<fp.h>` trap with current clang | `bazel/zlib.BUILD`, `bazel/png.BUILD` |
+| **Python 3.13** | The Python repo rule used `distutils` (removed in 3.13) → switched to stdlib `sysconfig` | `python_system.bzl` |
+| **Build ergonomics** | Pin Bazel via `.bazelversion`; default Bazel flags in `.bazelrc` (`--noenable_bzlmod`, `--enable_workspace`, C++17); add a `justfile` of simple commands | `.bazelversion`, `.bazelrc`, `justfile` |
+
+### Known gaps
+
+* `bazel test //python/tests:python_module_test` fails to configure because the
+  test rule still builds a Python 2 variant, which Bazel 7 forbids. The module
+  itself builds and runs fine.
+* Only the native CGL headless renderer and the SDL headful renderer are wired up
+  for macOS; the Linux OSMesa/GLX/EGL backends are unchanged and unused here.
 
 <br><br><br>
 
