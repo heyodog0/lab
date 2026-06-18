@@ -2,3 +2,13 @@ build --noenable_bzlmod
 build --enable_workspace
 build --cxxopt=-std=c++17
 build --host_cxxopt=-std=c++17
+
+# This is a port; all remaining warnings live in third-party deps (abseil, zlib,
+# libpng, minizip) and the upstream ioquake3 engine, not in code we maintain.
+# Silence them so build/run output stays readable. (Apple's libtool archiver may
+# still print a few "has no symbols" notes during a rebuild; those have no
+# suppression flag and are harmless.)
+build --copt=-w
+build --host_copt=-w
+# Quiet the macOS linker (duplicate -lm, obsolete -single_module, alignment notes).
+build --linkopt=-Wl,-w
